@@ -115,7 +115,7 @@ endif()
 include_directories(${LEVELDB_INCLUDE_PATH})
 
 find_package(OpenSSL)
-include_directories(${OPENSSL_INCLUDE_DIR})
+include_directories(${_bRPC_OPENSSL_INCLUDE_DIR})
 
 
 set(DYNAMIC_LIB

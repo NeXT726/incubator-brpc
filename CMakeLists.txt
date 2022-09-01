@@ -72,15 +72,18 @@ configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/src/butil
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(GFLAGS REQUIRED)
+# TODO: gflags从系统库中查找
+set(_brpc_GFLAGS_LIBRARY /home/ubuntu/third-party/lib/libgflags.so)
+set(_brpc_GFLAGS_INCLUDE_PATH /home/ubuntu/third-party/include)
+# find_package(GFLAGS REQUIRED)
 
 execute_process(
-    COMMAND bash -c "grep \"namespace [_A-Za-z0-9]\\+ {\" ${GFLAGS_INCLUDE_PATH}/gflags/gflags_declare.h | head -1 | awk '{print $2}' | tr -d '\n'"
+    COMMAND bash -c "grep \"namespace [_A-Za-z0-9]\\+ {\" ${_brpc_GFLAGS_INCLUDE_PATH}/gflags/gflags_declare.h | head -1 | awk '{print $2}' | tr -d '\n'"
     OUTPUT_VARIABLE GFLAGS_NS
 )
 if(${GFLAGS_NS} STREQUAL "GFLAGS_NAMESPACE")
     execute_process(
-        COMMAND bash -c "grep \"#define GFLAGS_NAMESPACE [_A-Za-z0-9]\\+\" ${GFLAGS_INCLUDE_PATH}/gflags/gflags_declare.h | head -1 | awk '{print $3}' | tr -d '\n'"
+        COMMAND bash -c "grep \"#define GFLAGS_NAMESPACE [_A-Za-z0-9]\\+\" ${_brpc_GFLAGS_INCLUDE_PATH}/gflags/gflags_declare.h | head -1 | awk '{print $3}' | tr -d '\n'"
         OUTPUT_VARIABLE GFLAGS_NS
     )
 endif()
@@ -142,14 +145,17 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-find_package(Protobuf REQUIRED)
-find_package(Threads REQUIRED)
+# TODO:Protobuf从ck中找；pthread直接用。
+# set(PROTOBUF_LIBRARIES ch_contrib::protobuf)
+# find_package(Protobuf REQUIRED)
 
-find_path(LEVELDB_INCLUDE_PATH NAMES leveldb/db.h)
-find_library(LEVELDB_LIB NAMES leveldb)
-if ((NOT LEVELDB_INCLUDE_PATH) OR (NOT LEVELDB_LIB))
-    message(FATAL_ERROR "Fail to find leveldb")
-endif()
+# find_package(Threads REQUIRED)
+
+# find_path(LEVELDB_INCLUDE_PATH NAMES leveldb/db.h)
+# find_library(LEVELDB_LIB libleveldb.a /usr/lib/x86_64-linux-gnu/)
+# if ((NOT LEVELDB_INCLUDE_PATH) OR (NOT LEVELDB_LIB))
+#     message(FATAL_ERROR "Fail to find leveldb")
+# endif()
 
 if(WITH_GLOG)
     find_path(GLOG_INCLUDE_PATH NAMES glog/logging.h)
@@ -171,10 +177,12 @@ if(WITH_MESALINK)
     include_directories(${MESALINK_INCLUDE_PATH})
 endif()
 
-find_library(PROTOC_LIB NAMES protoc)
-if(NOT PROTOC_LIB)
-    message(FATAL_ERROR "Fail to find protoc lib")
-endif()
+# TODO:libprotoc.so在系统库中有，但ck的protobuf编译不会生成这个库
+# find_library(PROTOC_LIB NAMES protoc)
+# if(NOT PROTOC_LIB)
+#     message(FATAL_ERROR "Fail to find protoc lib")
+# endif()
+# set(PROTOC_LIB ch_contrib::protoc)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(OPENSSL_ROOT_DIR
@@ -182,24 +190,28 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         )
 endif()
 
-find_package(OpenSSL)
+# OpenSSL库ck进行了编译，命名为OpenSSL::SSL
+# find_package(OpenSSL)
+# set(OPENSSL_CRYPTO_LIBRARY OpenSSL::SSL)
 
+# include也要一个个的赋值
 include_directories(
-        ${GFLAGS_INCLUDE_PATH}
-        ${PROTOBUF_INCLUDE_DIRS}
-        ${LEVELDB_INCLUDE_PATH}
-        ${OPENSSL_INCLUDE_DIR}
+        ${_bRPC_GFLAGS_INCLUDE_PATH}
+        ${_brpc_PROTOBUF_INCLUDE_DIR}
+        ${_bRPC_LEVELDB_INCLUDE_PATH}
+        ${_bRPC_OPENSSL_INCLUDE_DIR}
         )
 
 set(DYNAMIC_LIB
-    ${GFLAGS_LIBRARY}
-    ${PROTOBUF_LIBRARIES}
-    ${LEVELDB_LIB}
-    ${PROTOC_LIB}
+    ${_bRPC_GFLAGS_LIBRARY}
+    ${_bRPC_PROTOBUF_LIBRARIES}
+    ${_bRPC_LEVELDB_LIB}
+    ${_bRPC_PROTOC_LIB}
     ${CMAKE_THREAD_LIBS_INIT}
     ${THRIFT_LIB}
     ${THRIFTNB_LIB}
-    ${OPENSSL_CRYPTO_LIBRARY}
+    ${_bRPC_OPENSSL_CRYPTO_LIBRARY}
+    pthread
     dl
     z)
 
@@ -413,7 +425,7 @@ set(PROTO_FILES idl_options.proto
                 brpc/streaming_rpc_meta.proto
                 brpc/proto_base.proto)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/output/include/brpc)
-set(PROTOC_FLAGS ${PROTOC_FLAGS} -I${PROTOBUF_INCLUDE_DIR})
+set(PROTOC_FLAGS ${PROTOC_FLAGS} -I${_brpc_PROTOBUF_INCLUDE_DIR})
 compile_proto(PROTO_HDRS PROTO_SRCS ${PROJECT_BINARY_DIR}
                                     ${PROJECT_BINARY_DIR}/output/include
                                     ${PROJECT_SOURCE_DIR}/src

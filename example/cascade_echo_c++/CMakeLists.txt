@@ -108,7 +108,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 find_package(OpenSSL)
-include_directories(${OPENSSL_INCLUDE_DIR})
+include_directories(${_bRPC_OPENSSL_INCLUDE_DIR})
 
 set(DYNAMIC_LIB
     ${CMAKE_THREAD_LIBS_INIT}
